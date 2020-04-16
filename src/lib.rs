@@ -89,6 +89,38 @@ impl<'input> Document<'input> {
         Node { id: NodeId::new(0), d: &self.nodes[0], doc: self }
     }
 
+    /// Returns the nth node of the tree (with regards to document-order). For
+    /// info on document-order, see the documentation for the Node struct on
+    /// the Ord trait implementation.
+    /// 
+    /// Note: n == 0 represents the root node
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let doc = roxmltree::Document::parse("\
+    /// <p>
+    ///     text
+    /// </p>
+    /// ").unwrap();
+    /// 
+    /// assert_eq!(doc.nth_node(0).unwrap(), doc.root());
+    /// assert_eq!(doc.nth_node(1), doc.descendants().find(|n| n.has_tag_name("p")));
+    /// assert_eq!(doc.nth_node(2), doc.descendants().find(|n| n.is_text()));
+    /// assert_eq!(doc.nth_node(3), None);
+    /// ```
+    #[inline]
+    pub fn nth_node<'a>(&'a self, n: usize) -> Option<Node<'a, 'input>> {
+        let id = NodeId::new(n);
+        self.nodes.get(id.get()).map(|data| Node { id, d: data, doc: self })
+    }
+
+    /// Returns the number of nodes in the document
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.nodes.len()
+    }
+
     /// Returns the root element of the document.
     ///
     /// Unlike `root`, will return a first element node.
@@ -1115,6 +1147,27 @@ impl<'a, 'input: 'a> Node<'a, 'input> {
     #[inline]
     pub fn range(&self) -> Range {
         self.d.range.clone()
+    }
+
+    /// Returns node's order in the document.
+    /// This is the reverse of the nth_node method of document.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let doc = roxmltree::Document::parse("\
+    /// <p>
+    ///     text
+    /// </p>
+    /// ").unwrap();
+    /// 
+    /// (0..doc.len()).for_each(|n| {
+    ///     assert_eq!(doc.nth_node(n).unwrap().order_in_document(), n);
+    /// });
+    /// ```
+    #[inline]
+    pub fn order_in_document(&self) -> usize {
+        self.id.get()
     }
 }
 
